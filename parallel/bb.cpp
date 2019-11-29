@@ -191,7 +191,7 @@ int calculate_cost(int reduced_matrix[N][N])
 // Print list of cities visited following least cost
 void print_path(vector<pair<int, int>> const &list) {
   for (int i = 0; i < list.size(); i++)
-    cout << list[i].first << " -> " << list[i].second << endl;
+    printf("%d  ->  %d\n", list[i].first, list[i].second);
 }
 
 // Comparison object to be used to order the heap
