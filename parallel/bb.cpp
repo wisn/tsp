@@ -10,8 +10,8 @@
 
 using namespace std;
 
-#define N 5
-#define DATASET "own"
+#define N 7
+#define DATASET "bc7"
 #define INF INT_MAX
 #define PARALLEL true
 
@@ -191,7 +191,7 @@ int calculate_cost(int reduced_matrix[N][N])
 // Print list of cities visited following least cost
 void print_path(vector<pair<int, int>> const &list) {
   for (int i = 0; i < list.size(); i++)
-    cout << list[i].first + 1 << " -> " << list[i].second + 1 << endl;
+    cout << list[i].first << " -> " << list[i].second << endl;
 }
 
 // Comparison object to be used to order the heap
@@ -277,7 +277,7 @@ void generate_cost(int matrix[N][N]) {
 }
 
 // Get input from input file and use it as NxN matrix
-void getInput(int matrix[N][N], string filename) 
+void get_input(int matrix[N][N], string filename) 
 {
   ifstream file ("./../inputs/" + filename + ".in");
 
@@ -300,6 +300,11 @@ void getInput(int matrix[N][N], string filename)
 
       ++lines;
     }
+  } 
+  else 
+  {
+    printf("ERR: Input file does not exists.");
+    exit(1);
   }
 
   // Convert 0 to INF
@@ -329,7 +334,7 @@ int main()
   // Matrix to calculate.
   int matrix[N][N];
 
-  getInput(matrix, DATASET);  
+  get_input(matrix, DATASET);  
   generate_cost(matrix);
 
   // Print out the answer. Compare the computed cost with the precomputed answer.
