@@ -10,8 +10,8 @@
 
 using namespace std;
 
-#define N 26
-#define DATASET "fri26"
+#define N 15
+#define DATASET "p01"
 #define INF INT_MAX
 #define PARALLEL true
 
@@ -276,6 +276,26 @@ void generate_cost(int matrix[N][N]) {
         matrix[i][j] = INF;
 }
 
+// Removing extra whitespaces on dataset
+string remove_excessive_ws(std::string str)
+{
+    bool seen_space = false;
+    auto end{std::remove_if(str.begin(), str.end(),
+                            [&seen_space](unsigned ch) {
+                              bool is_space = std::isspace(ch);
+                              std::swap(seen_space, is_space);
+                              return seen_space && is_space;
+                            }
+                           )
+    };
+
+    if (end != str.begin() && std::isspace(static_cast<unsigned>(end[-1])))
+        --end;
+
+    str.erase(end, str.end());
+    return str;
+}
+
 // Get input from input file and use it as NxN matrix
 void get_input(int matrix[N][N], string filename) 
 {
@@ -290,13 +310,24 @@ void get_input(int matrix[N][N], string filename)
     while (getline(file, line)) {
       string entry;
       stringstream ss (line);
-      
+
+      // Removing extra whitespace on a line
+      string str = remove_excessive_ws(ss.str());
+      istringstream iss(str);
+
       column = 0;
-      while (getline(ss, entry, ' ')) {
-        int cost = stoi(entry);
+      do { 
+        string subs; 
+  
+        // Get the word from the istringstream 
+        // subs is the word fetched from the istringstream  
+        iss >> subs;
+
+        int cost = atoi(subs.c_str());
         matrix[lines][column] = cost;
-        ++column;
-      }
+
+        ++column;  
+      } while (iss);
 
       ++lines;
     }
