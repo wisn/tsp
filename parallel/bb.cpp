@@ -15,8 +15,7 @@ using namespace std;
 #define INF INT_MAX
 #define PARALLEL true
 
-struct Node
-{
+struct Node {
   // Stores edges of state space tree helps in tracing path when answer is found
   vector<pair<int, int>> path;
 
@@ -34,8 +33,7 @@ struct Node
 };
 
 // Allocate a new node (i, j) corresponds to visiting city j from city i
-Node* new_node(int parent_matrix[N][N], vector<pair<int, int>> const &path, int level, int i, int j)
-{
+Node* new_node(int parent_matrix[N][N], vector<pair<int, int>> const &path, int level, int i, int j) {
   Node* node = new Node;
 
   // Stores ancestors edges of state space tree
@@ -75,22 +73,19 @@ Node* new_node(int parent_matrix[N][N], vector<pair<int, int>> const &path, int 
 }
 
 // Reduce each row in such a way that there must be at least one zero in each row
-void row_reduction(int reduced_matrix[N][N], int row[N])
-{
+void row_reduction(int reduced_matrix[N][N], int row[N]) {
   // Initialize row array to INF
   fill_n(row, N, INF);
 
   // Row[i] contains minimum in row i
-  if (PARALLEL) 
-  {
-    #pragma omp for
-    for (int i = 0; i < N; i++)
-      for (int j = 0; j < N; j++)
+  if (PARALLEL) {
+    int i, j;
+    #pragma omp for private (i, j)
+    for (i = 0; i < N; i++)
+      for (j = 0; j < N; j++)
         if (reduced_matrix[i][j] < row[i])
           row[i] = reduced_matrix[i][j];
-  }
-  else
-  {
+  } else {
     for (int i = 0; i < N; i++)
       for (int j = 0; j < N; j++)
         if (reduced_matrix[i][j] < row[i])
@@ -98,16 +93,14 @@ void row_reduction(int reduced_matrix[N][N], int row[N])
   }
 
   // Reduce the minimum value from each element in each row
-  if (PARALLEL) 
-  {
-    #pragma omp for
-    for (int i = 0; i < N; i++)
-      for (int j = 0; j < N; j++)
+  if (PARALLEL) {
+    int i, j;
+    #pragma omp for private (i, j)
+    for (i = 0; i < N; i++)
+      for (j = 0; j < N; j++)
         if (reduced_matrix[i][j] != INF && row[i] != INF)
           reduced_matrix[i][j] -= row[i];
-  }
-  else
-  {
+  } else {
     for (int i = 0; i < N; i++)
       for (int j = 0; j < N; j++)
         if (reduced_matrix[i][j] != INF && row[i] != INF)
@@ -116,22 +109,19 @@ void row_reduction(int reduced_matrix[N][N], int row[N])
 }
 
 // Reduce each column in such a way that there must be at least one zero in each column
-void column_reduction(int reduced_matrix[N][N], int col[N])
-{
+void column_reduction(int reduced_matrix[N][N], int col[N]) {
   // Initialize col array to INF
   fill_n(col, N, INF);
 
   // col[j] contains minimum in col j
-  if (PARALLEL) 
-  {
-    #pragma omp for
-    for (int i = 0; i < N; i++)
-      for (int j = 0; j < N; j++)
+  if (PARALLEL) {
+    int i, j;
+    #pragma omp for private (i, j)
+    for (i = 0; i < N; i++)
+      for (j = 0; j < N; j++)
         if (reduced_matrix[i][j] < col[j])
           col[j] = reduced_matrix[i][j];
-  }
-  else
-  {
+  } else {
     for (int i = 0; i < N; i++)
       for (int j = 0; j < N; j++)
         if (reduced_matrix[i][j] < col[j])
@@ -139,16 +129,14 @@ void column_reduction(int reduced_matrix[N][N], int col[N])
   }
 
   // Reduce the minimum value from each element in each column
-  if (PARALLEL) 
-  {
-    #pragma omp for
-    for (int i = 0; i < N; i++)
-      for (int j = 0; j < N; j++)
+  if (PARALLEL) {
+    int i, j;
+    #pragma omp for private (i, j)
+    for (i = 0; i < N; i++)
+      for (j = 0; j < N; j++)
         if (reduced_matrix[i][j] != INF && col[j] != INF)
           reduced_matrix[i][j] -= col[j];
-  }
-  else
-  {
+  } else {
     for (int i = 0; i < N; i++)
       for (int j = 0; j < N; j++)
         if (reduced_matrix[i][j] != INF && col[j] != INF)
@@ -157,8 +145,7 @@ void column_reduction(int reduced_matrix[N][N], int col[N])
 }
 
 // Get the lower bound on on the path starting at current min node
-int calculate_cost(int reduced_matrix[N][N])
-{
+int calculate_cost(int reduced_matrix[N][N]) {
   // Initialize cost to 0
   int cost = 0;
 
@@ -171,15 +158,13 @@ int calculate_cost(int reduced_matrix[N][N])
   column_reduction(reduced_matrix, col);
 
   // The total expected cost is the sum of all reductions
-  if (PARALLEL)
-  {
-    #pragma omp for
-    for (int i = 0; i < N; i++)
+  if (PARALLEL) {
+    int i;
+    #pragma omp for private(i)
+    for (i = 0; i < N; i++)
       cost += (row[i] != INT_MAX) ? row[i] : 0,
         cost += (col[i] != INT_MAX) ? col[i] : 0;
-  }
-  else
-  {
+  } else {
     for (int i = 0; i < N; i++)
       cost += (row[i] != INT_MAX) ? row[i] : 0,
         cost += (col[i] != INT_MAX) ? col[i] : 0;
@@ -277,8 +262,7 @@ void generate_cost(int matrix[N][N]) {
 }
 
 // Removing extra whitespaces on dataset
-string remove_excessive_ws(std::string str)
-{
+string remove_excessive_ws(std::string str) {
     bool seen_space = false;
     auto end{std::remove_if(str.begin(), str.end(),
                             [&seen_space](unsigned ch) {
@@ -297,12 +281,10 @@ string remove_excessive_ws(std::string str)
 }
 
 // Get input from input file and use it as NxN matrix
-void get_input(int matrix[N][N], string filename) 
-{
+void get_input(int matrix[N][N], string filename)  {
   ifstream file ("./../inputs/" + filename + ".in");
 
-  if (file.is_open()) 
-  {
+  if (file.is_open()) {
     size_t lines = 0;
     size_t column = 0;
     string line;
@@ -331,9 +313,7 @@ void get_input(int matrix[N][N], string filename)
 
       ++lines;
     }
-  } 
-  else 
-  {
+  } else {
     printf("ERR: Input file does not exists.");
     exit(1);
   }
@@ -346,8 +326,7 @@ void get_input(int matrix[N][N], string filename)
 }
 
 // Check if optimal cost is correct
-int get_output(string filename) 
-{
+int get_output(string filename) {
   ifstream file ("./../outputs/" + filename + ".out");
 
   if (file.is_open()) {
@@ -360,8 +339,7 @@ int get_output(string filename)
   }
 }
 
-int main() 
-{
+int main() {
   // Matrix to calculate.
   int matrix[N][N];
 
