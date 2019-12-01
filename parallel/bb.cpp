@@ -10,8 +10,8 @@
 
 using namespace std;
 
-#define N 7
-#define DATASET "bc7"
+#define N 26
+#define DATASET "fri26"
 #define INF INT_MAX
 #define PARALLEL true
 
@@ -355,6 +355,5 @@ int main()
 
   printf("\nTook about %.6f seconds.\n", duration);
   printf("Also, the optimal cost is %sCORRECT.\n", solve_tsp != get_output(DATASET) ? "IN" : "");
-
   return 0;
 }
