@@ -80,9 +80,9 @@ void row_reduction(int reduced_matrix[N][N], int row[N]) {
   // Row[i] contains minimum in row i
   if (PARALLEL) {
     int i, j;
-    #pragma omp for private (i, j)
-    for (i = 0; i < N; i++)
-      for (j = 0; j < N; j++)
+    #pragma omp for
+    for (int i = 0; i < N; i++)
+      for (int j = 0; j < N; j++)
         if (reduced_matrix[i][j] < row[i])
           row[i] = reduced_matrix[i][j];
   } else {
@@ -94,10 +94,9 @@ void row_reduction(int reduced_matrix[N][N], int row[N]) {
 
   // Reduce the minimum value from each element in each row
   if (PARALLEL) {
-    int i, j;
-    #pragma omp for private (i, j)
-    for (i = 0; i < N; i++)
-      for (j = 0; j < N; j++)
+    #pragma omp for
+    for (int i = 0; i < N; i++)
+      for (int j = 0; j < N; j++)
         if (reduced_matrix[i][j] != INF && row[i] != INF)
           reduced_matrix[i][j] -= row[i];
   } else {
@@ -115,10 +114,9 @@ void column_reduction(int reduced_matrix[N][N], int col[N]) {
 
   // col[j] contains minimum in col j
   if (PARALLEL) {
-    int i, j;
-    #pragma omp for private (i, j)
-    for (i = 0; i < N; i++)
-      for (j = 0; j < N; j++)
+    #pragma omp for
+    for (int i = 0; i < N; i++)
+      for (int j = 0; j < N; j++)
         if (reduced_matrix[i][j] < col[j])
           col[j] = reduced_matrix[i][j];
   } else {
@@ -130,10 +128,9 @@ void column_reduction(int reduced_matrix[N][N], int col[N]) {
 
   // Reduce the minimum value from each element in each column
   if (PARALLEL) {
-    int i, j;
-    #pragma omp for private (i, j)
-    for (i = 0; i < N; i++)
-      for (j = 0; j < N; j++)
+    #pragma omp for
+    for (int i = 0; i < N; i++)
+      for (int j = 0; j < N; j++)
         if (reduced_matrix[i][j] != INF && col[j] != INF)
           reduced_matrix[i][j] -= col[j];
   } else {
@@ -159,9 +156,8 @@ int calculate_cost(int reduced_matrix[N][N]) {
 
   // The total expected cost is the sum of all reductions
   if (PARALLEL) {
-    int i;
-    #pragma omp for private(i)
-    for (i = 0; i < N; i++)
+    #pragma omp for
+    for (int i = 0; i < N; i++)
       cost += (row[i] != INT_MAX) ? row[i] : 0,
         cost += (col[i] != INT_MAX) ? col[i] : 0;
   } else {
@@ -262,18 +258,18 @@ void generate_cost(int matrix[N][N]) {
 }
 
 // Removing extra whitespaces on dataset
-string remove_excessive_ws(std::string str) {
+string remove_excessive_ws(string str) {
     bool seen_space = false;
-    auto end{std::remove_if(str.begin(), str.end(),
+    auto end{remove_if(str.begin(), str.end(),
                             [&seen_space](unsigned ch) {
-                              bool is_space = std::isspace(ch);
-                              std::swap(seen_space, is_space);
+                              bool is_space = isspace(ch);
+                              swap(seen_space, is_space);
                               return seen_space && is_space;
                             }
                            )
     };
 
-    if (end != str.begin() && std::isspace(static_cast<unsigned>(end[-1])))
+    if (end != str.begin() && isspace(static_cast<unsigned>(end[-1])))
         --end;
 
     str.erase(end, str.end());
