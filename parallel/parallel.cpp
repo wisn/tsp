@@ -13,7 +13,6 @@ using namespace std;
 #define N 15
 #define DATASET "p01"
 #define INF INT_MAX
-#define PARALLEL true
 
 struct Node {
   // Stores edges of state space tree helps in tracing path when answer is found
@@ -78,33 +77,18 @@ void row_reduction(int reduced_matrix[N][N], int row[N]) {
   fill_n(row, N, INF);
 
   // Row[i] contains minimum in row i
-  if (PARALLEL) {
-    int i, j;
-    #pragma omp for
-    for (int i = 0; i < N; i++)
-      for (int j = 0; j < N; j++)
-        if (reduced_matrix[i][j] < row[i])
-          row[i] = reduced_matrix[i][j];
-  } else {
-    for (int i = 0; i < N; i++)
-      for (int j = 0; j < N; j++)
-        if (reduced_matrix[i][j] < row[i])
-          row[i] = reduced_matrix[i][j]; 
-  }
+  #pragma omp for
+  for (int i = 0; i < N; i++)
+    for (int j = 0; j < N; j++)
+      if (reduced_matrix[i][j] < row[i])
+        row[i] = reduced_matrix[i][j];
 
   // Reduce the minimum value from each element in each row
-  if (PARALLEL) {
-    #pragma omp for
-    for (int i = 0; i < N; i++)
-      for (int j = 0; j < N; j++)
-        if (reduced_matrix[i][j] != INF && row[i] != INF)
-          reduced_matrix[i][j] -= row[i];
-  } else {
-    for (int i = 0; i < N; i++)
-      for (int j = 0; j < N; j++)
-        if (reduced_matrix[i][j] != INF && row[i] != INF)
-          reduced_matrix[i][j] -= row[i];
-  }
+  #pragma omp for
+  for (int i = 0; i < N; i++)
+    for (int j = 0; j < N; j++)
+      if (reduced_matrix[i][j] != INF && row[i] != INF)
+        reduced_matrix[i][j] -= row[i];
 }
 
 // Reduce each column in such a way that there must be at least one zero in each column
@@ -113,32 +97,18 @@ void column_reduction(int reduced_matrix[N][N], int col[N]) {
   fill_n(col, N, INF);
 
   // col[j] contains minimum in col j
-  if (PARALLEL) {
-    #pragma omp for
-    for (int i = 0; i < N; i++)
-      for (int j = 0; j < N; j++)
-        if (reduced_matrix[i][j] < col[j])
-          col[j] = reduced_matrix[i][j];
-  } else {
-    for (int i = 0; i < N; i++)
-      for (int j = 0; j < N; j++)
-        if (reduced_matrix[i][j] < col[j])
-          col[j] = reduced_matrix[i][j];
-  }
+  #pragma omp for
+  for (int i = 0; i < N; i++)
+    for (int j = 0; j < N; j++)
+      if (reduced_matrix[i][j] < col[j])
+        col[j] = reduced_matrix[i][j];
 
   // Reduce the minimum value from each element in each column
-  if (PARALLEL) {
-    #pragma omp for
-    for (int i = 0; i < N; i++)
-      for (int j = 0; j < N; j++)
-        if (reduced_matrix[i][j] != INF && col[j] != INF)
-          reduced_matrix[i][j] -= col[j];
-  } else {
-    for (int i = 0; i < N; i++)
-      for (int j = 0; j < N; j++)
-        if (reduced_matrix[i][j] != INF && col[j] != INF)
-          reduced_matrix[i][j] -= col[j];
-  }
+  #pragma omp for
+  for (int i = 0; i < N; i++)
+    for (int j = 0; j < N; j++)
+      if (reduced_matrix[i][j] != INF && col[j] != INF)
+        reduced_matrix[i][j] -= col[j];
 }
 
 // Get the lower bound on on the path starting at current min node
@@ -155,17 +125,11 @@ int calculate_cost(int reduced_matrix[N][N]) {
   column_reduction(reduced_matrix, col);
 
   // The total expected cost is the sum of all reductions
-  if (PARALLEL) {
-    #pragma omp for
-    for (int i = 0; i < N; i++)
-      cost += (row[i] != INT_MAX) ? row[i] : 0,
-        cost += (col[i] != INT_MAX) ? col[i] : 0;
-  } else {
-    for (int i = 0; i < N; i++)
-      cost += (row[i] != INT_MAX) ? row[i] : 0,
-        cost += (col[i] != INT_MAX) ? col[i] : 0;
+  #pragma omp for
+  for (int i = 0; i < N; i++) {
+    cost += (row[i] != INF) ? row[i] : 0;
+    cost += (col[i] != INF) ? col[i] : 0;
   }
-
   return cost;
 }
 
@@ -343,11 +307,7 @@ int main() {
   generate_cost(matrix);
 
   // Print out the answer. Compare the computed cost with the precomputed answer.
-  if (PARALLEL)  
-    printf("TSP parallel with branch-and-bound approach.\n");
-  else  
-    printf("TSP serial with branch-and-bound approach.\n");
-
+  printf("TSP parallel with branch-and-bound approach.\n");
   printf("Computed %d nodes from \"%s\" dataset.\n\n", N, DATASET);
 
   double start_time = omp_get_wtime();
