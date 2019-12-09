@@ -14,7 +14,7 @@ using namespace std;
 // Type aliasing. Rename `long long` to `ll`.
 typedef long long ll;
 
-const ll INF = ~(0ULL) >> 1;
+const ll INF = ~(0U) >> 1;
 
 // Chosen dataset. This is used for fetch file from `inputs` and `outputs` folder.
 const string dataset = "own10";
@@ -56,6 +56,10 @@ int main() {
 
         while (getline(ss, entry, ' ')) {
           ll cost = stoll(entry);
+
+          if (cost == 0) {
+            cost = INF;
+          }
 
           graph[graph.size() - 1].push_back(cost);
         }

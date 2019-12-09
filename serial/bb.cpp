@@ -11,8 +11,8 @@
 
 using namespace std;
 
-#define N 26
-#define DATASET "fri26"
+#define N 17
+#define DATASET "gr17"
 #define INF INT_MAX
 
 // Chosen cores number or get from the system.
@@ -84,15 +84,12 @@ void row_reduction(int reduced_matrix[N][N], int row[N]) {
   fill_n(row, N, INF);
 
   // Row[i] contains minimum in row i
-  int i, j;
-  #pragma omp
   for (int i = 0; i < N; i++)
     for (int j = 0; j < N; j++)
       if (reduced_matrix[i][j] < row[i])
         row[i] = reduced_matrix[i][j];
 
   // Reduce the minimum value from each element in each row
-  #pragma omp
   for (int i = 0; i < N; i++)
     for (int j = 0; j < N; j++)
       if (reduced_matrix[i][j] != INF && row[i] != INF)
@@ -105,14 +102,12 @@ void column_reduction(int reduced_matrix[N][N], int col[N]) {
   fill_n(col, N, INF);
 
   // col[j] contains minimum in col j
-  #pragma omp
   for (int i = 0; i < N; i++)
     for (int j = 0; j < N; j++)
       if (reduced_matrix[i][j] < col[j])
         col[j] = reduced_matrix[i][j];
 
   // Reduce the minimum value from each element in each column
-  #pragma omp
   for (int i = 0; i < N; i++)
     for (int j = 0; j < N; j++)
       if (reduced_matrix[i][j] != INF && col[j] != INF)
@@ -133,7 +128,6 @@ int calculate_cost(int reduced_matrix[N][N]) {
   column_reduction(reduced_matrix, col);
 
   // The total expected cost is the sum of all reductions
-  #pragma omp
   for (int i = 0; i < N; i++)
     cost += (row[i] != INT_MAX) ? row[i] : 0,
       cost += (col[i] != INT_MAX) ? col[i] : 0;
@@ -202,10 +196,7 @@ long long solve(int matrix[N][N]) {
 
     // Do for each child of min
     // (i, j) forms an edge in space tree
-    #pragma omp parallel for schedule(static)
     for (int j = 0; j < N; j++) {
-      // printf("Using thread #%d\n", omp_get_thread_num());
-
       if (min->reduced_matrix[i][j] != INF) {
         // Create a child node and calculate its cost
         Node* child = new_node(min->reduced_matrix, min->path, min->level + 1, i, j);
@@ -215,11 +206,9 @@ long long solve(int matrix[N][N]) {
           cost of the edge(i, j) +
           lower bound of the path starting at node j
         */
-        // #pragma omp single
         child->cost = min->cost + min->reduced_matrix[i][j] + calculate_cost(child->reduced_matrix);
 
         // Add child to list of live nodes
-        #pragma omp critical(pq)
         pq.push(child);
       }
     }
@@ -327,35 +316,25 @@ int main() {
   generate_cost(matrix);
 
   // Print out the answer. Compare the computed cost with the precomputed answer.
-  printf("TSP parallel with branch-and-bound approach.\n");
+  printf("TSP serial with branch-and-bound approach.\n");
 
   printf("Computed %d nodes from \"%s\" dataset.\n\n", N, DATASET);
 
   double start_time = omp_get_wtime();
 
   // Print path and get optimal cost
-  long long solve_tsp;
+  long long solve_tsp = solve(matrix);
+  
+  double end_time = omp_get_wtime();
+  double duration = end_time - start_time;
 
-  // #pragma omp parallel
-  // {
-    #pragma omp single
-    {
-      #pragma omp task shared(solve_tsp)
-      solve_tsp = solve(matrix);
-      #pragma omp taskwait
+  printf("\nTook about %.6f seconds.\n", duration);
+  printf("Also, the optimal cost is %sCORRECT.\n\n", solve_tsp != get_output(DATASET) ? "IN" : "");
 
-      double end_time = omp_get_wtime();
-      double duration = end_time - start_time;
-
-      printf("\nTook about %.6f seconds.\n", duration);
-      printf("Also, the optimal cost is %sCORRECT.\n\n", solve_tsp != get_output(DATASET) ? "IN" : "");
-
-      printf("Thread frequencies:\n");
-      for (int i = 0; i < cores; i++) {
-        printf("#%d ran %d time(s).\n", i, thread_frequencies[i]);
-      }
-    }
-  // }
+  printf("Thread frequencies:\n");
+  for (int i = 0; i < cores; i++) {
+    printf("#%d ran %d time(s).\n", i, thread_frequencies[i]);
+  }
 
   return 0;
 }
