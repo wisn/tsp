@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstring>
 #include <climits>
 #include <fstream>
@@ -10,10 +11,16 @@
 
 using namespace std;
 
-#define N 15
-#define DATASET "p01"
+#define N 26
+#define DATASET "fri26"
 #define INF INT_MAX
 #define PARALLEL true
+
+// Chosen cores number or get from the system.
+const int cores = omp_get_num_procs();
+
+// For counting the frequencies in the thread usage.
+vector<int> thread_frequencies (cores, 0);
 
 struct Node {
   // Stores edges of state space tree helps in tracing path when answer is found
@@ -80,7 +87,7 @@ void row_reduction(int reduced_matrix[N][N], int row[N]) {
   // Row[i] contains minimum in row i
   if (PARALLEL) {
     int i, j;
-    #pragma omp for
+    #pragma omp for collapse(2)
     for (int i = 0; i < N; i++)
       for (int j = 0; j < N; j++)
         if (reduced_matrix[i][j] < row[i])
@@ -94,7 +101,7 @@ void row_reduction(int reduced_matrix[N][N], int row[N]) {
 
   // Reduce the minimum value from each element in each row
   if (PARALLEL) {
-    #pragma omp for
+    #pragma omp for collapse(2)
     for (int i = 0; i < N; i++)
       for (int j = 0; j < N; j++)
         if (reduced_matrix[i][j] != INF && row[i] != INF)
@@ -114,7 +121,7 @@ void column_reduction(int reduced_matrix[N][N], int col[N]) {
 
   // col[j] contains minimum in col j
   if (PARALLEL) {
-    #pragma omp for
+    #pragma omp for collapse(2)
     for (int i = 0; i < N; i++)
       for (int j = 0; j < N; j++)
         if (reduced_matrix[i][j] < col[j])
@@ -128,7 +135,7 @@ void column_reduction(int reduced_matrix[N][N], int col[N]) {
 
   // Reduce the minimum value from each element in each column
   if (PARALLEL) {
-    #pragma omp for
+    #pragma omp for collapse(2)
     for (int i = 0; i < N; i++)
       for (int j = 0; j < N; j++)
         if (reduced_matrix[i][j] != INF && col[j] != INF)
@@ -242,6 +249,8 @@ int solve(int matrix[N][N]) {
       }
     }
 
+    thread_frequencies[omp_get_thread_num()] += 1;
+
     // Free node as we have already stored edges (i, j) in vector.
     // So no need for parent node while printing solution.
     delete min;
@@ -336,6 +345,8 @@ int get_output(string filename) {
 }
 
 int main() {
+  omp_set_num_threads(cores);
+
   // Matrix to calculate.
   int matrix[N][N];
 
@@ -359,6 +370,12 @@ int main() {
   double duration = end_time - start_time;
 
   printf("\nTook about %.6f seconds.\n", duration);
-  printf("Also, the optimal cost is %sCORRECT.\n", solve_tsp != get_output(DATASET) ? "IN" : "");
+  printf("Also, the optimal cost is %sCORRECT.\n\n", solve_tsp != get_output(DATASET) ? "IN" : "");
+
+  // printf("Thread frequencies:\n");
+  // for (int i = 0; i < cores; i++) {
+  //   printf("#%d ran %d time(s).\n", i, thread_frequencies[i]);
+  // }
+
   return 0;
 }

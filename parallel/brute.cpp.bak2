@@ -15,12 +15,15 @@ using namespace std;
 typedef long long ll;
 
 // Chosen dataset. This is used for fetch file from `inputs` and `outputs` folder.
-const string dataset = "own12";
+const string dataset = "own5";
 
 // Chosen cores number or get from the system.
 const int cores = omp_get_num_procs();
 
 int main() {
+  // Set the number of cores we want to use.
+  omp_set_num_threads(cores);
+
   // Graph representation in matrix.
   vector<vector<ll>> graph;
 
@@ -89,50 +92,64 @@ int main() {
 
   // The main function for solving TSP problem. Brute-force approach using DFS.
   function<void(int)> solve_tsp = [&](int start) {
-    if (visited_node.size() == N) {
-      current_cost += graph[start][current_path[0]];
-      current_path.push_back(current_path[0]);
+    visited_node.insert(start);
+    current_path.push_back(start);
 
-      if (paths.empty()) {
-        paths.push({current_cost, current_path});
-      }
+    // The parallel function for solving TSP problem.
+    function<void(int)> recurse = [&](int start) {
+      if (visited_node.size() == N) {
+        current_cost += graph[start][current_path[0]];
+        current_path.push_back(current_path[0]);
 
-      if (paths.top().first > current_cost) {
-        paths.pop();
-        paths.push({current_cost, current_path});
-      }
+        if (paths.empty()) {
+          paths.push({current_cost, current_path});
+        }
 
-      current_cost -= graph[start][current_path[0]];
-      current_path.pop_back();
+        if (paths.top().first > current_cost) {
+          paths.pop();
+          paths.push({current_cost, current_path});
+        }
 
-      thread_frequencies[omp_get_thread_num()] += 1;
-
-      return;
-    }
-
-    if (visited_node.size() == 0) {
-      visited_node.insert(start);
-      current_path.push_back(start);
-    }
-
-    for (int i = 0; i < N; i++) {
-      ll cost = graph[start][i];
-      if (cost != 0LL && visited_node.find(i) == visited_node.end()) {
-        current_cost += cost;
-        current_path.push_back(i);
-        visited_node.insert(i);
-
-        solve_tsp(i);
-
-        current_cost -= cost;
+        current_cost -= graph[start][current_path[0]];
         current_path.pop_back();
-        visited_node.erase(i);
+
+        thread_frequencies[omp_get_thread_num()] += 1;
+
+        return;
+      }
+
+      #pragma omp taskloop
+      for (int i = 0; i < N; i++) {
+        ll cost = graph[start][i];
+        if (cost != 0LL && visited_node.find(i) == visited_node.end()) {
+          current_cost += cost;
+          current_path.push_back(i);
+          visited_node.insert(i);
+
+          recurse(i);
+
+          current_cost -= cost;
+          current_path.pop_back();
+          visited_node.erase(i);
+        }
+      }
+    };
+
+    
+    #pragma omp parallel private(current_cost, current_path, visited_node)
+    {
+      #pragma single
+      #pragma taskloop
+      for (int i = 0; i < N; i++) {
+        printf("Thread #%d\n", omp_get_thread_num());
+        // #pragma single
+        recurse(i);
       }
     }
   };
 
   // Print all possible answers.
-  function<void()> print_all_paths = [&comparator, &graph, &paths, &N]() {
+  function<void()> print_all_paths = [&paths, &graph, &N]() {
     auto pq = paths;
 
     while (!pq.empty()) {
@@ -185,6 +202,7 @@ int main() {
 
   double start_time = omp_get_wtime();
 
+  // #pragma omp parallel
   solve_tsp(0);
 
   ll cost = get_final_cost();
@@ -194,13 +212,12 @@ int main() {
   double duration = end_time - start_time;
 
   // Print out the answer. Compare the computed cost with the precomputed answer.
-  printf("TSP serial with brute-force approach.\n");
+  printf("TSP parallel with brute-force approach with %d cores.\n", cores);
   printf("Computed %d nodes from \"%s\" dataset.\n\n", N, dataset.c_str());
   printf("Optimal cost is %lld.\n", cost);
   printf("Optimal path:\n\n");
 
   print_path(path);
-  // print_all_paths();
 
   printf("\nTook about %.6f seconds.\n", duration);
   printf("Also, the optimal cost is %sCORRECT.\n\n", cost != get_output(dataset) ? "IN" : "");
