@@ -80,6 +80,7 @@ int main() {
     }
   };
 
+  // Generate route permutation independently.
   function<void()> generate_permutation = [&]() {
     function<void(vector<int>, int)> recurse = [&](vector<int> v, int size) {
       if (size == 1) {
@@ -108,6 +109,7 @@ int main() {
     recurse(v, N);
   };
 
+  // Calculate the travel cost based on the generated route permutation.
   function<void()> calculate_cost = [&]() {
     int M = generated_permutation.size();
 

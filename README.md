@@ -51,6 +51,9 @@ This is tested on Intel Core i3-5005U 2.0 GHz with 12 GB RAM.
 
 ### Brute-force Approach
 
+The testing for `own12` is failed because the RAM can't hold it.
+That is because the generated route permutation about N factorial.
+
 #### Time Comparison
 
 | Dataset | Serial Time (in seconds) | Parallel Time (in seconds) | Speedup      |
@@ -88,7 +91,7 @@ This is tested on Intel Core i3-5005U 2.0 GHz with 12 GB RAM.
       <td>0 times</td>
       <td>0 times</td>
       <td>62 times</td>
-      <td>62 times</td>
+      <td>66 times</td>
       <td>55 times</td>
       <td>57 times</td>
     </tr>
